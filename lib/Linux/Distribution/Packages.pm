@@ -6,7 +6,7 @@ use warnings;
 
 use base qw(Linux::Distribution);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 my %commands = (
     'debian'                => 'dpkg',
@@ -20,13 +20,18 @@ our @EXPORT_OK = qw(distribution_packages distribution_write format);
 
 sub new {
     my $package = shift;
+    my $options = shift;
    
     my $self = {
         'command'           => '',
         'format'            => 'native',
         '_data'             => '',
-        'options'           => ''
+        'output_file'       => ''
     };
+
+    foreach my $option (keys %{$options}){
+	$self->{$option} = $options->{$option};
+    }
 
     bless $self, $package;
     $self->SUPER::new();
@@ -48,18 +53,24 @@ sub distribution_packages {
 
 sub distribution_write {
     my $self = shift;
+    my $options = shift;
+    foreach my $option (keys %{$options}){
+        $self->{$option} = $options->{$option};
+    }
     my $print_function = '_list_' . $self->{'format'};
+    if ( $self->{'format'} ne 'xml'){
+        $self->_open_output_fh();
+    }
     $self->$print_function();
+    if ( $self->{'format'} ne 'xml'){
+        $self->_close_output_fh();
+    }
+    return 1;
 }
 
 sub format {
     my $self = shift;
     $self->{'format'} = shift || 'native';
-}
-
-sub option {
-    my $self = shift;
-    $self->{'options'} = shift;
 }
 
 sub _retrieve_all {
@@ -71,15 +82,24 @@ sub _retrieve_all {
 
 sub _list_native {
     my $self = shift;
-    print $self->{_data};
+    my $output = $self->{'output_file_handle'};
+    print { $output || *STDOUT } $self->{_data};
 }
 
 sub _list_xml {
-    use XML::Writer;
+    require XML::Writer;
     my $self = shift;
     my $writer;
+
+    my $writer_options = {DATA_MODE => 1, DATA_INDENT => 2};
+    my $output;
+    if (defined $self->{'output_file'}){
+        require IO::File;
+        $output = new IO::File(">$self->{'output_file'}");
+	$writer_options->{'OUTPUT'} = $output;
+    }
     if ($self->{'format'} =~ m/xml/i){
-        $writer = new XML::Writer(DATA_MODE => 1, DATA_INDENT => 2);
+        $writer = new XML::Writer(%{$writer_options});
         $writer->startTag('distribution', "name" => $self->{'DISTRIB_ID'}, "release" => $self->distribution_version());
     }
     my $hash = $self->_parse($writer);
@@ -93,7 +113,8 @@ sub _list_csv {
 
 sub _row_csv {
     my $self = shift;
-    print "\'" . join("\',\'", @_) . "\'\n";
+    my $output = $self->{'output_file_handle'};
+    print { $output || *STDOUT } "\'" . join("\',\'", @_) . "\'\n";
 }
 
 sub _parse {
@@ -105,6 +126,24 @@ sub _parse {
     }
 }
 
+sub _open_output_fh {
+    my $self = shift;
+    if ($self->{'output_file'}){
+        open FH, ">>$self->{'output_file'}";
+        $self->{'output_file_handle'} = *FH;
+    } else {
+        delete $self->{'output_file_handle'};
+        delete $self->{'output_file'};
+    }
+}
+
+sub _close_output_fh {
+    my $self = shift;
+    if ($self->{'output_file'}){
+        close $self->{'output_file_handle'};
+        delete $self->{'output_file_handle'};
+    }
+}
 return 1;
 
 package Linux::Distribution::Packages::equery;
@@ -198,11 +237,13 @@ Linux::Distribution::Packages - list all packages on various Linux distributions
 
 =head1 SYNOPSIS
 
-  use Linux::Distribution::Packages qw(distribution_packages distribution_write format option);
+  use Linux::Distribution::Packages qw(distribution_packages distribution_write);
 
-  $linux = new Linux::Distribution::Packages;
-  $linux->format( 'xml' );
+  $linux = new Linux::Distribution::Packages({'format' => 'csv', 'output_file' => 'packages.csv'});
   $linux->distribution_write();
+
+  # Or you can (re)set the options when you write.
+  $linux->distribution_write({'format' => 'xml', 'output_file' => 'packages.xml'});
 
   # If you want to reload the package data
   $linux->distribution_packages();
@@ -223,7 +264,6 @@ None by default.
 =head1 TODO
 
 * Add the capability to correctly get packages for all recognized distributions.
-* Make 'distribution_write' write to a file you set.
 * Seperate out parsing from writing.  Parse data to hash and give access to hash. 
 Then write the formatted data from the hash.
 

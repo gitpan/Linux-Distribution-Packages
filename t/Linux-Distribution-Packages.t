@@ -5,11 +5,12 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::Simple tests => 2;
+use Test::More tests => 3;
 use Linux::Distribution::Packages;
 
 my $linux=new Linux::Distribution::Packages();
 
-ok( defined($linux) and ref $linux eq 'Linux::Distribution::Packages',     'new() works' );
+ok( defined($linux) ,     'new() works 1' );
+like( ref $linux, qr/^Linux::Distribution::Packages.*/,     'new() works 2' );
 ok( $linux->distribution_write(),     'distribution_write() works'    );
 
