@@ -6,15 +6,16 @@ use warnings;
 
 use base qw(Linux::Distribution);
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 my %commands = (
     'debian'                => 'dpkg',
-    'ubuntu'                => 'dpkg',
-    'redhat'                => 'rpm',
-    'suse'                  => 'rpm',
     'gentoo'                => 'equery',
+    'redflag'               => 'rpm',
+    'redhat'                => 'rpm',
     'slackware'             => 'pkgtool',
+    'suse'                  => 'rpm',
+    'ubuntu'                => 'dpkg',
 );
 
 our @EXPORT_OK = qw(distribution_packages distribution_write format);
@@ -280,7 +281,7 @@ on the system and then output them in one of three formats:  native, csv,
 and xml.
 
 Distributions currently working:  debian, ubuntu, redhat, suse, gentoo, 
-slackware.
+slackware, redflag.
 
 The module inherits from Linux::Distribution, so can also use its calls.
 
