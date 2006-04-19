@@ -6,11 +6,12 @@ use warnings;
 
 use base qw(Linux::Distribution);
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 my %commands = (
     'debian'                => 'dpkg',
     'gentoo'                => 'equery',
+    'fedora'                => 'rpm',
     'redflag'               => 'rpm',
     'redhat'                => 'rpm',
     'slackware'             => 'pkgtool',
@@ -280,8 +281,8 @@ distribution and then uses the correct commands to list all the packages
 on the system and then output them in one of three formats:  native, csv, 
 and xml.
 
-Distributions currently working:  debian, ubuntu, redhat, suse, gentoo, 
-slackware, redflag.
+Distributions currently working:  debian, ubuntu, fedora, redhat, suse, 
+gentoo, slackware, redflag.
 
 The module inherits from Linux::Distribution, so can also use its calls.
 
